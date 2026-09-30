@@ -19,10 +19,6 @@ The unwritten rules. Every question has one of three tags:
 | 5 | Duplicate lines | **DECIDED.** "Guests cannot change the main recipe" stays in **Must** and is removed from **Won't**. The unfinished line "guests can only" is removed from Won't. |
 | 6 | Warning before the two-week deletion | **DECIDED.** No warning. It is 2 weeks after the dinner, so the invitation is no longer needed. |
 
-### Consequences of these answers that the agent must handle
-- Earlier wording "declined or kicked guests lose access to the request page" is replaced by the state machine in `CONSTRAINTS.md`.
-- Answers 1 and 2 pull in slightly different directions for `declined`. Q1 below states how they are reconciled.
-
 ---
 
 ## 2. Example mapping
@@ -45,9 +41,9 @@ The unwritten rules. Every question has one of three tags:
 - E6 (R4): The dinner was yesterday. Claim buttons are disabled, and a direct request is rejected.
 
 **Questions (red cards)**
-- Q-A1. Can a guest in `invited` status (not yet answered) see features, without being able to claim? **PO WILL ANSWER.** Proposal: yes, read-only view.
-- Q-A2. Can one user hold two roles on the *same* feature (two slots of Dessert)? **PO WILL ANSWER.** Proposal: no, one role per feature per user.
-- Q-A3. Is Main course a feature with slots (several people cook it)? **PO WILL ANSWER.** Proposal: yes, same mechanics as other features, with one main course per request.
+- Q-A1. Can a guest in `invited` status (not yet answered) see features, without being able to claim? **PDECIDED.** yes, read-only view.
+- Q-A2. Can one user hold two roles on the *same* feature (two slots of Dessert)? **DECIDED.** Proposal: no, one role per feature per user.
+- Q-A3. Is Main course a feature with slots (several people cook it)? **DECIDED.** yes, same mechanics as other features, with one main course per request.
 
 ### Story B: "User 1 can kick a guest"
 
@@ -65,7 +61,7 @@ The unwritten rules. Every question has one of three tags:
 - Q-B1. Can User 1 kick themselves, or kick a guest after the dinner date? **DECIDED:** no to both (read-only after the date, and User 1 is not a guest).
 - Q-B2. Is the kicked user told? **OUT OF SCOPE (v1).** No notice is sent to a kicked user.
 - Q-B3. Does a re-added guest get their old roles back? **DECIDED:** no, they return with no roles.
-- Q-B4. Does a kicked user still see the request in "Dinners I have been invited to"? **PO WILL ANSWER.** Proposal: no, it disappears from their list.
+- Q-B4. Does a kicked user still see the request in "Dinners I have been invited to"? **DECIDED.** no, it disappears from their list.
 
 ### Story C: "User 1 can turn cost split on"
 
@@ -79,8 +75,8 @@ The unwritten rules. Every question has one of three tags:
 - E2: A guest declines. The count drops to 3 and the amount becomes 200 for everyone.
 
 **Questions**
-- Q-C1. Currency and rounding (600 / 7)? **PO WILL ANSWER.** Proposal: a single currency label set once (SEK), rounded up to the next whole unit or to 2 decimals.
-- Q-C2. If User 1 is not attending, do they count? **PO WILL ANSWER.** Proposal: User 1 always counts, as the scope says.
+- Q-C1. Currency and rounding (600 / 7)? **DECIDED.** a single currency label set once (SEK), rounded up to the next whole unit or to 2 decimals.
+- Q-C2. If User 1 is not attending, do they count? **DECIDED.** User 1 always counts, as the scope says.
 
 ---
 
@@ -92,7 +88,7 @@ The unwritten rules. Every question has one of three tags:
 |---|---|---|
 | Money | (none) | n/a |
 | Actor | Can User 1 assign a role to someone else? | **OUT OF SCOPE (v1).** Users only claim for themselves. |
-| Actor | Who holds Host, and can a guest take Host if User 1 unselects it? | **PO WILL ANSWER.** Proposal: yes, Host is a single-slot role anyone accepted can take. |
+| Actor | Who holds Host, and can a guest take Host if User 1 unselects it? | **DECIDED.** yes, Host is a single-slot role anyone accepted can take. |
 | Time | Claim arrives after the date has passed | **DECIDED.** Rejected, request is read-only. |
 | State | Guest changes to "No" while their claim is processing | **DECIDED.** Both are serialized in the database. The final state has no roles for a non-accepted guest. |
 | State | User 1 lowers slots below filled | **DECIDED.** Blocked with a message. |
@@ -103,11 +99,11 @@ The unwritten rules. Every question has one of three tags:
 | Dimension | Question | Tag |
 |---|---|---|
 | Money | (none) | n/a |
-| Actor | Who counts toward the 30 limit? | **PO WILL ANSWER.** Proposal: all guests except kicked (so `invited`, `accepted`, `declined` count). |
+| Actor | Who counts toward the 30 limit? | **DECIDED.** Proposal: all guests except kicked (so `invited`, `accepted`, `declined` count). |
 | Actor | Can a link be shared so strangers join? | **DECIDED.** Yes. Anyone with the link can join, unless blocked. The link can be disabled by User 1. |
 | Time | Link opened after the date or after deletion | **DECIDED.** Clear "link not valid" or read-only view. |
 | State | Declined user opens the link | **DECIDED.** Blocked from joining anew. They keep the existing guest row (see Q1). |
-| State | Link is disabled, and existing guests? | **PO WILL ANSWER.** Proposal: existing guests keep access, only new joins are blocked. |
+| State | Link is disabled, and existing guests? | **DECIDED.** existing guests keep access, only new joins are blocked. |
 
 ### Mechanic: cost split
 
@@ -126,9 +122,9 @@ The unwritten rules. Every question has one of three tags:
 | Money | (none) | n/a |
 | Actor | Deleted user was User 1 | **DECIDED.** Their requests are deleted, guests get a home-page notice. |
 | Actor | Deleted user was a guest | **DECIDED.** Removed from requests, roles freed. |
-| Time | Is deletion immediate or delayed | **PO WILL ANSWER.** Proposal: immediate, with a confirmation step. |
-| State | Can the username be reused after deletion | **PO WILL ANSWER.** Proposal: yes. |
-| State | How long do notices stay on the home page | **PO WILL ANSWER.** Proposal: until dismissed, or 14 days. |
+| Time | Is deletion immediate or delayed | **DECIDED.** immediate, with a confirmation step. |
+| State | Can the username be reused after deletion | **DECIDED.** yes. |
+| State | How long do notices stay on the home page | **DECIDED.** until dismissed, or 14 days. |
 
 ### Mechanic: alcohol age check
 
@@ -140,18 +136,3 @@ The unwritten rules. Every question has one of three tags:
 | State | Modal shown again if Alcohol is removed and re-added | **DECIDED.** Yes, every time it is added. |
 
 ---
-
-## 4. Other open questions
-
-| # | Question | Tag |
-|---|---|---|
-| Q1 | A `declined` guest is "blocked from the link" (answer 2) but also "not deleted" and can change answer (answer 1). Reconciliation used in the scope: a declined guest keeps their guest row and request page access and can switch back to Yes themselves. The link only blocks people who are not currently a guest, plus kicked users. Is that right? | **PO WILL ANSWER.** |
-| Q2 | Login by username: hidden-email workaround (proposal) vs real email. | **PO WILL ANSWER.** Agent proposes in Explore. |
-| Q3 | Forgotten password: no reset possible without email. Accept that? | **OUT OF SCOPE (v1)** unless told otherwise. |
-| Q4 | Username rules: length, allowed characters, case sensitivity. | **PO WILL ANSWER.** Proposal: 3 to 20 chars, letters, digits, underscore, case-insensitive unique. |
-| Q5 | Time zone of the dinner date and the exact moment it becomes read-only. | **PO WILL ANSWER.** Proposal: stored with date and time, read-only at the end of the dinner day in the dinner's time zone. |
-| Q6 | Can the date or time be changed after guests have accepted, and are guests told? | **PO WILL ANSWER.** Proposal: User 1 can change it, no notice in v1. |
-| Q7 | Do guests see live slot updates, or only on refresh? | **PO WILL ANSWER.** Proposal: refresh and clear server errors in v1, realtime later. |
-| Q8 | Does "Entertainment" have options as sub-choices with their own slots, or one feature with a label? | **PO WILL ANSWER.** Proposal: one feature with a chosen option label. |
-| Q9 | Who sees "Dinners I have been invited to" for declined requests? | **PO WILL ANSWER.** Proposal: shown, marked as declined. |
-| Q10 | Are notices (removed feature, deleted request) only on the home page? | **DECIDED.** Yes, home page only. |
