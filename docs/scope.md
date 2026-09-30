@@ -80,6 +80,17 @@ Minimalist. Main colours are off-white with soft pastel violet and blue accents.
 - Guests can request extra features, and User 1 approves them.
 - A chat on the request page.
 
+### Won't (Won't be created)
+- Real payments and in-app payments (the app only shows the split amount)
+- Push notifications, email or SMS notifications, and native mobile apps
+- Recurring dinners
+- Multiple languages (English only)
+- Guests changing the main recipe
+- Guest-requested features and chat (see Could)
+- Warning guests before a request is deleted 2 weeks after the dinner
+- Password reset by email (see `AMBIGUITY.md`, open question)
+- Age verification of guests
+
 ## Features that must exist
 
 - Appetizers (several allowed, optional recipe)
@@ -100,18 +111,6 @@ When User 1 adds Alcohol, a modal asks: "Is everyone invited over 18?"
 - If not, the feature is not added.
 
 The app does not verify ages. It is a confirmation by User 1 only.
-
-## Out of scope (first version): do NOT build
-
-- Real payments and in-app payments (the app only shows the split amount)
-- Push notifications, email or SMS notifications, and native mobile apps
-- Recurring dinners
-- Multiple languages (English only)
-- Guests changing the main recipe
-- Guest-requested features and chat (see Could)
-- Warning guests before a request is deleted 2 weeks after the dinner
-- Password reset by email (see `AMBIGUITY.md`, open question)
-- Age verification of guests
 
 ## Thin vertical slice (build this path first)
 
