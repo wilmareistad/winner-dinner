@@ -60,6 +60,51 @@ export async function expectSqlError(client, sql, params, code) {
   throw new Error(`Expected SQLSTATE ${code}, but the query succeeded`);
 }
 
+function callSql(fn, argCount) {
+  const placeholders = Array.from({ length: argCount }, (_, i) => `$${i + 1}`).join(", ");
+  return `select public.${fn}(${placeholders}) as result`;
+}
+
+// Calls a database function as the user (null = anonymous), then switches back
+// to the admin role so the test can set up and inspect data directly.
+export async function rpcAs(client, userId, fn, ...args) {
+  await actAs(client, userId);
+  const { rows } = await client.query(callSql(fn, args.length), args);
+  await client.query("reset role");
+  return rows[0].result;
+}
+
+// Like rpcAs, but asserts that the call fails with the given SQLSTATE.
+export async function rpcErrorAs(client, userId, fn, args, code) {
+  await actAs(client, userId);
+  const error = await expectSqlError(client, callSql(fn, args.length), args, code);
+  await client.query("reset role");
+  return error;
+}
+
+// For a race task: calls the function in the task's own transaction, holds the
+// locks a moment so the competing tasks have to wait, then commits. Rolls back
+// at once on error so a waiting task is never blocked by an aborted one.
+export function raceCall(userId, fn, ...args) {
+  return async (client) => {
+    try {
+      await actAs(client, userId);
+      await client.query(callSql(fn, args.length), args);
+      await client.query("select pg_sleep(0.2)");
+      await client.query("commit");
+    } catch (error) {
+      await client.query("rollback");
+      throw error;
+    }
+  };
+}
+
+// Random username for data that is committed, so parallel runs never collide.
+// The prefix may be at most 11 characters.
+export function uniqueUsername(prefix) {
+  return `${prefix}_${randomUUID().replaceAll("-", "").slice(0, 8)}`;
+}
+
 // Runs each task on its own connection at the same moment. Each task gets a client
 // with an open transaction and decides itself whether to commit or roll back.
 // Returns one { status, value | reason } per task, like Promise.allSettled.
