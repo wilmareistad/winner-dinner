@@ -267,3 +267,7 @@ dialog {
 dialog::backdrop {
   background: rgb(42 39 51 / 0.4);
 }
+
+.guest-row {
+  align-items: center;
+}

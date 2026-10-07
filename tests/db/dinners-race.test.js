@@ -4,7 +4,16 @@
 // their dinners, participants and roles.
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { connect, createAuthUser, race, raceCall, rpcAs, uniqueUsername } from "./helpers";
-import { ERR, addFeature, addGuest, newDinner, roleCount, roleHolders } from "./dinner-fixtures";
+import {
+  ERR,
+  addFeature,
+  addGuest,
+  bulkAcceptedGuests,
+  newDinner,
+  roleCount,
+  roleHolders,
+  statusOf,
+} from "./dinner-fixtures";
 
 let db;
 let userIds;
@@ -17,6 +26,12 @@ async function user(prefix) {
 
 async function guest(dinnerId, prefix) {
   const id = await addGuest(db, dinnerId, uniqueUsername(prefix));
+  userIds.push(id);
+  return id;
+}
+
+async function invitedGuest(dinnerId, prefix) {
+  const id = await addGuest(db, dinnerId, uniqueUsername(prefix), "invited");
   userIds.push(id);
   return id;
 }
@@ -178,5 +193,49 @@ describe("races on one dinner", () => {
     expect([[ERR.full], [ERR.belowFilled]]).toContainEqual(errors);
     const { rows } = await db.query("select slots from public.features where id = $1", [dessert]);
     expect((await roleHolders(db, dessert)).length).toBeLessThanOrEqual(rows[0].slots);
+  });
+
+  it("the 30th and 31st guests accept at the same time: exactly one gets in", async () => {
+    const { dinnerId, a, b } = await committed(async () => {
+      const owner = await user("owner");
+      const dinnerId = await newDinner(db, owner);
+      // Pushed to userIds, so afterEach deletes them like the other users.
+      userIds.push(...(await bulkAcceptedGuests(db, dinnerId, 29)));
+      const a = await invitedGuest(dinnerId, "a");
+      const b = await invitedGuest(dinnerId, "b");
+      return { dinnerId, a, b };
+    });
+
+    const results = await race([
+      raceCall(a, "set_answer", dinnerId, "accepted"),
+      raceCall(b, "set_answer", dinnerId, "accepted"),
+    ]);
+
+    expect(outcome(results)).toEqual({ ok: 1, errors: [ERR.requestFull] });
+    const { rows } = await db.query(
+      `select count(*)::int as n from public.participants p join public.dinners d on d.id = p.dinner_id
+       where p.dinner_id = $1 and p.status = 'accepted' and p.user_id <> d.owner_id`,
+      [dinnerId]
+    );
+    expect(rows[0].n).toBe(30);
+  });
+
+  it("User 1 kicks a guest while the guest is claiming: the kicked guest holds no role", async () => {
+    const { owner, dinnerId, dessert, ben } = await committed(async () => {
+      const owner = await user("owner");
+      const dinnerId = await newDinner(db, owner);
+      const dessert = await addFeature(db, owner, dinnerId, "dessert");
+      return { owner, dinnerId, dessert, ben: await guest(dinnerId, "ben") };
+    });
+
+    const [claim, kick] = await race([
+      raceCall(ben, "claim_role", dessert),
+      raceCall(owner, "kick_guest", dinnerId, ben),
+    ]);
+
+    expect(kick.status).toBe("fulfilled");
+    if (claim.status === "rejected") expect(claim.reason.code).toBe(ERR.notFound);
+    expect(await statusOf(db, dinnerId, ben)).toBe("kicked");
+    expect(await roleCount(db, dinnerId, ben)).toBe(0);
   });
 });

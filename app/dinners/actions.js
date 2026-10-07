@@ -172,3 +172,26 @@ export async function toggleRole(_prevState, formData) {
   }
   return { error: dbErrorMessage(error) };
 }
+
+export async function kickGuest(_prevState, formData) {
+  const dinnerId = field(formData, "dinner_id");
+  const userId = field(formData, "user_id");
+  if (!isUuid(dinnerId) || !isUuid(userId)) return { error: GENERIC_ERROR };
+  const supabase = await sessionClient(`/dinners/${dinnerId}`);
+
+  const { error } = await supabase.rpc("kick_guest", { p_dinner_id: dinnerId, p_user_id: userId });
+  refresh();
+  return error ? { error: dbErrorMessage(error) } : {};
+}
+
+// Only finds kicked guests of this dinner (the database searches, not the client).
+export async function readdGuest(_prevState, formData) {
+  const dinnerId = field(formData, "dinner_id");
+  if (!isUuid(dinnerId)) return { error: GENERIC_ERROR };
+  const supabase = await sessionClient(`/dinners/${dinnerId}`);
+  const username = field(formData, "username");
+
+  const { error } = await supabase.rpc("readd_guest", { p_dinner_id: dinnerId, p_username: username });
+  refresh();
+  return error ? { error: dbErrorMessage(error), username } : { readded: username };
+}
