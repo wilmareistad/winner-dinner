@@ -211,3 +211,13 @@ export async function setCostSplit(_prevState, formData) {
   refresh();
   return error ? { error: dbErrorMessage(error), total } : {};
 }
+
+export async function deleteDinner(_prevState, formData) {
+  const dinnerId = field(formData, "dinner_id");
+  if (!isUuid(dinnerId)) return { error: GENERIC_ERROR };
+  const supabase = await sessionClient(`/dinners/${dinnerId}`);
+
+  const { error } = await supabase.rpc("delete_dinner", { p_dinner_id: dinnerId });
+  if (error) return { error: dbErrorMessage(error) };
+  redirect("/");
+}

@@ -1,6 +1,6 @@
 # WinnerDinner 2000: Milestone plan
 
-Status: **APPROVED.** Milestones 0 to 4 are done and applied to the dev Supabase project.
+Status: **APPROVED.** Milestones 0 to 5 are done and applied to the dev Supabase project.
 Source rules: `docs/scope.md`, `docs/constraints.md`, `docs/ambiguity.md`. If this plan and those files disagree, stop and ask.
 
 ## Working rules for every milestone
@@ -9,7 +9,7 @@ Source rules: `docs/scope.md`, `docs/constraints.md`, `docs/ambiguity.md`. If th
 - Every rule touched by the milestone gets a test, written together with the code.
 - All writes go through `SECURITY DEFINER` functions with a fixed `search_path` that first lock the dinner row (`SELECT ... FOR UPDATE`). Clients get no direct INSERT/UPDATE/DELETE on business tables.
 - Everything is keyed by user id (uuid), never by username.
-- Only the publishable key reaches the browser. The service-role key (needed from M5) lives in a server-only env var, never `NEXT_PUBLIC_`.
+- Only the publishable key reaches the browser. The app uses no service-role key (account deletion is a database function, see M5).
 - Check current Supabase and Next.js docs before writing version-specific code.
 
 ## Data model (target, built up over the milestones)
@@ -115,7 +115,9 @@ Acceptance criteria
 Tests: RLS test that a guest and an anonymous user get no rows when split is off; E1/E2 from `docs/ambiguity.md` (600 / 4 = 150, then 200).
 
 ## Milestone 5: Profile, notices and account deletion
-Scope: profile (name, emoji), change password, notices list on the home page with dismiss, account deletion (server route, service-role key server-side only), notice cleanup job.
+Scope: profile (name, emoji), change password, notices list on the home page with dismiss, account deletion, notice cleanup job.
+
+Decision (changed during M5): account deletion is the `SECURITY DEFINER` function `delete_my_account()`, called from a server action, instead of a route with the service-role key. It takes no parameters (identity = `auth.uid()`), runs in one transaction, and the app needs no service-role key at all. See `docs/ambiguity.md`, section 4.
 
 Acceptance criteria
 - A user can edit only their own profile. Other guests see username and emoji, the name only User 1 and the user see.

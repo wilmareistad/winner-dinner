@@ -3,6 +3,9 @@ import { redirect } from "next/navigation";
 import { createClient, getCurrentUserId } from "@/lib/supabase/server";
 import { formatDinnerTime, isReadOnly } from "@/lib/dinners";
 import { signOut } from "./login/actions";
+import { DeleteAccountForm, PasswordForm } from "./account/AccountSettings";
+import NoticeList from "./account/NoticeList";
+import ProfileForm from "./account/ProfileForm";
 
 const STATUS_LABELS = {
   invited: "Not answered",
@@ -37,11 +40,14 @@ export default async function HomePage() {
 
   // RLS returns the caller's own profile, and only dinners they may see
   // (not kicked). Both lists are indexed by owner_id and user_id.
-  const [{ data: profile }, { data: dinners }, { data: myRows }] = await Promise.all([
-    supabase.from("profiles").select("username, display_name, emoji").eq("id", userId).maybeSingle(),
-    supabase.from("dinners").select("id, owner_id, main_title, starts_at").order("starts_at"),
-    supabase.from("participants").select("dinner_id, status").eq("user_id", userId),
-  ]);
+  // Notices: RLS returns only the caller's own, from the last 14 days.
+  const [{ data: profile }, { data: dinners }, { data: myRows }, { data: notices }] =
+    await Promise.all([
+      supabase.from("profiles").select("username, display_name, emoji").eq("id", userId).maybeSingle(),
+      supabase.from("dinners").select("id, owner_id, main_title, starts_at").order("starts_at"),
+      supabase.from("participants").select("dinner_id, status").eq("user_id", userId),
+      supabase.from("notices").select("id, text, created_at").order("created_at", { ascending: false }),
+    ]);
 
   const created = (dinners ?? []).filter((d) => d.owner_id === userId);
   const invited = (dinners ?? []).filter((d) => d.owner_id !== userId);
@@ -57,6 +63,8 @@ export default async function HomePage() {
         {profile && <p className="muted">@{profile.username}</p>}
       </header>
 
+      <NoticeList notices={notices ?? []} />
+
       <Link href="/dinners/new" className="button primary">
         Create new dinner request
       </Link>
@@ -70,6 +78,15 @@ export default async function HomePage() {
         <h2>Dinners I have been invited to</h2>
         <DinnerList dinners={invited} statusByDinner={statusByDinner} />
       </section>
+
+      {profile && (
+        <section className="stack">
+          <h2>My account</h2>
+          <ProfileForm profile={profile} />
+          <PasswordForm />
+          <DeleteAccountForm username={profile.username} />
+        </section>
+      )}
 
       <form action={signOut}>
         <button type="submit">Log out</button>
