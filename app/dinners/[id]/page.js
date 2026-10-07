@@ -14,6 +14,7 @@ import {
 import AddFeatureForm from "./AddFeatureForm";
 import AnswerForm from "./AnswerForm";
 import CostSplit, { CostLine } from "./CostSplit";
+import DeleteDinner from "./DeleteDinner";
 import EditDinnerForm from "./EditDinnerForm";
 import FeatureCard from "./FeatureCard";
 import GuestManager from "./GuestManager";
@@ -169,6 +170,8 @@ export default async function DinnerPage({ params }) {
       </section>
 
       {isOwner && <GuestManager dinnerId={id} people={people} readOnly={readOnly} />}
+
+      {isOwner && !readOnly && <DeleteDinner dinnerId={id} />}
 
       {!isOwner && me?.status === "accepted" && (
         <section className="stack">

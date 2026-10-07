@@ -163,6 +163,7 @@ All **DECIDED**. Chosen to fit the rules above. Change them here first if they t
 | Re-add search | Username search only among the kicked guests of that request. No global user search. |
 | Profile visibility | Other guests see username and emoji. The name is visible to User 1 and to the user themselves only. |
 | Invite link | Random token with high entropy, separate from the request id. The landing page for anonymous visitors shows only "You have been invited" and the login/sign-up form. After login the user returns by a relative path only. |
+| Account deletion | A `SECURITY DEFINER` function `delete_my_account()` with no parameters, called from a server action. The identity is `auth.uid()` only. It writes the notices and deletes the `auth.users` row in one transaction, and everything else cascades. No service-role key is used anywhere. |
 | Notices | Keyed by user id, with a text copy of the message. Created for: feature removed, request deleted by its creator, request deleted because the creator deleted their account. Removed when dismissed or after 14 days. |
 | Accessibility | Feature colours must not be the only signal (also use a label or icon), and text must keep sufficient contrast on off-white. |
 | Tests | Vitest for everything. SQL/RLS tests use `pg` inside rolled-back transactions. Concurrency tests use several parallel database connections. |
