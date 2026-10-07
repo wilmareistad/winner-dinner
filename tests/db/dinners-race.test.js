@@ -3,7 +3,7 @@
 // with random usernames and deleted afterwards. Deleting the users cascades to
 // their dinners, participants and roles.
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { connect, createAuthUser, race, raceCall, rpcAs, uniqueUsername } from "./helpers";
+import { actAs, connect, createAuthUser, race, raceCall, rpcAs, uniqueUsername } from "./helpers";
 import {
   ERR,
   addFeature,
@@ -237,5 +237,42 @@ describe("races on one dinner", () => {
     if (claim.status === "rejected") expect(claim.reason.code).toBe(ERR.notFound);
     expect(await statusOf(db, dinnerId, ben)).toBe("kicked");
     expect(await roleCount(db, dinnerId, ben)).toBe(0);
+  });
+
+  it("cleanup runs while a user is viewing the request: both finish, then it is gone", async () => {
+    const { dinnerId, anna } = await committed(async () => {
+      const owner = await user("owner");
+      const dinnerId = await newDinner(db, owner);
+      const anna = await guest(dinnerId, "anna");
+      await db.query("update public.dinners set starts_at = now() - interval '15 days' where id = $1", [
+        dinnerId,
+      ]);
+      return { dinnerId, anna };
+    });
+
+    // The viewer loads the page, then reloads it while the cleanup has run.
+    // The cleanup starts once the viewer's first load is done.
+    const view = async (client) => {
+      await actAs(client, anna);
+      const first = await client.query("select id from public.dinners where id = $1", [dinnerId]);
+      await client.query("select * from public.dinner_people($1)", [dinnerId]);
+      await client.query("select pg_sleep(2)");
+      const reload = await client.query("select id from public.dinners where id = $1", [dinnerId]);
+      await client.query("commit");
+      return [first.rows.length, reload.rows.length];
+    };
+    const cleanup = async (client) => {
+      await client.query("select pg_sleep(1)");
+      await client.query("select public.cleanup_old_dinners()");
+      await client.query("commit");
+    };
+    const [viewed, cleaned] = await race([view, cleanup]);
+
+    // No error for the viewer: the first load shows it, the reload finds nothing
+    // (the page then shows "Request not found").
+    expect(viewed).toEqual({ status: "fulfilled", value: [1, 0] });
+    expect(cleaned.status).toBe("fulfilled");
+    const { rows } = await db.query("select id from public.dinners where id = $1", [dinnerId]);
+    expect(rows).toEqual([]);
   });
 });
