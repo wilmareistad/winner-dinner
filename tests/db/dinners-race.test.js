@@ -129,4 +129,54 @@ describe("races on one dinner", () => {
     expect(rows[0].status).toBe("declined");
     expect(await roleCount(db, dinnerId, ben)).toBe(0);
   });
+
+  it("User 1 removes a feature while someone is claiming it: no role is left behind", async () => {
+    const { owner, dessert, ben } = await committed(async () => {
+      const owner = await user("owner");
+      const dinnerId = await newDinner(db, owner);
+      const dessert = await addFeature(db, owner, dinnerId, "dessert");
+      return { owner, dessert, ben: await guest(dinnerId, "ben") };
+    });
+
+    const [claim, removal] = await race([
+      raceCall(ben, "claim_role", dessert),
+      raceCall(owner, "remove_feature", dessert, true),
+    ]);
+
+    // Either order is fine: the feature is gone, and Ben either never got the
+    // role ("no longer exists") or got it and then a notice that it was removed.
+    expect(removal.status).toBe("fulfilled");
+    expect(await roleHolders(db, dessert)).toEqual([]);
+    const { rows } = await db.query("select count(*)::int as n from public.notices where user_id = $1", [ben]);
+    if (claim.status === "fulfilled") {
+      expect(rows[0].n).toBe(1);
+    } else {
+      expect(claim.reason.code).toBe(ERR.notFound);
+      expect(rows[0].n).toBe(0);
+    }
+  });
+
+  it("User 1 lowers slots while someone is claiming: never more roles than slots", async () => {
+    const { owner, dessert, ben } = await committed(async () => {
+      const owner = await user("owner");
+      const dinnerId = await newDinner(db, owner);
+      const dessert = await addFeature(db, owner, dinnerId, "dessert", 2);
+      const anna = await guest(dinnerId, "anna");
+      await rpcAs(db, anna, "claim_role", dessert);
+      return { owner, dessert, ben: await guest(dinnerId, "ben") };
+    });
+
+    const results = await race([
+      raceCall(ben, "claim_role", dessert),
+      raceCall(owner, "set_slots", dessert, 1),
+    ]);
+
+    // One wins: either the slots go down and the claim is "full", or the claim
+    // goes through and lowering is blocked because 2 are filled.
+    const { ok, errors } = outcome(results);
+    expect(ok).toBe(1);
+    expect([[ERR.full], [ERR.belowFilled]]).toContainEqual(errors);
+    const { rows } = await db.query("select slots from public.features where id = $1", [dessert]);
+    expect((await roleHolders(db, dessert)).length).toBeLessThanOrEqual(rows[0].slots);
+  });
 });

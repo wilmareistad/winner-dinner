@@ -2,10 +2,12 @@ import { describe, expect, it } from "vitest";
 import {
   GENERIC_ERROR,
   dbErrorMessage,
+  featureName,
   formatDinnerTime,
   isReadOnly,
   isUuid,
   personLabel,
+  stockholmDateTime,
   todayInStockholm,
 } from "@/lib/dinners";
 
@@ -35,6 +37,11 @@ describe("time in Stockholm", () => {
     expect(todayInStockholm(new Date("2099-07-01T23:30:00Z"))).toBe("2099-07-02");
   });
 
+  it("splits the dinner time into Stockholm date and time fields", () => {
+    expect(stockholmDateTime("2099-07-01T17:00:00Z")).toEqual({ date: "2099-07-01", time: "19:00" });
+    expect(stockholmDateTime("2099-01-15T23:30:00Z")).toEqual({ date: "2099-01-16", time: "00:30" });
+  });
+
   it("is read-only from the dinner time on", () => {
     const startsAt = "2099-07-01T17:00:00Z";
     expect(isReadOnly(startsAt, new Date("2099-07-01T16:59:59Z"))).toBe(false);
@@ -52,5 +59,14 @@ describe("small helpers", () => {
   it("labels a person with emoji and username", () => {
     expect(personLabel({ username: "anna_k", emoji: "🍝" })).toBe("🍝 anna_k");
     expect(personLabel({ username: "anna_k", emoji: null })).toBe("anna_k");
+  });
+});
+
+describe("featureName", () => {
+  // Must match public.feature_name() in the database, which writes notices.
+  it("names a feature with its label or recipe title", () => {
+    expect(featureName({ type: "grocery_shopping" })).toBe("Grocery shopping");
+    expect(featureName({ type: "dessert", recipe_title: "Tiramisu" })).toBe("Dessert: Tiramisu");
+    expect(featureName({ type: "entertainment", label: "Karaoke" })).toBe("Entertainment (Karaoke)");
   });
 });

@@ -1,24 +1,36 @@
 "use client";
 
 import { useActionState } from "react";
-import { FEATURE_LABELS } from "@/lib/dinners";
+import { FEATURE_ICONS, featureName } from "@/lib/dinners";
 import { toggleRole } from "../actions";
+import FeatureAdmin from "./FeatureAdmin";
 
 // One feature with a checkbox per slot. A filled slot shows the holder.
-export default function FeatureCard({ dinnerId, feature, holders, canClaim, canUnclaim }) {
+// Colour-coded by type, always together with an icon and the name.
+export default function FeatureCard({ dinnerId, feature, holders, canClaim, canUnclaim, canManage }) {
   const [state, formAction, pending] = useActionState(toggleRole, {});
   const filled = holders.length;
   const full = filled >= feature.slots;
   const freeSlots = Math.max(feature.slots - filled, 0);
+  const name = featureName(feature);
 
   return (
-    <article className="card stack" aria-label={FEATURE_LABELS[feature.type]}>
+    <article className={`card stack feature feature--${feature.type}`} aria-label={name}>
       <div className="feature-head">
-        <h3>{FEATURE_LABELS[feature.type] ?? feature.type}</h3>
+        <h3>
+          <span aria-hidden="true">{FEATURE_ICONS[feature.type]}</span> {name}
+        </h3>
         <span className="badge">
           {full ? "Full" : "Open"} · {filled} of {feature.slots} filled
         </span>
       </div>
+      {feature.recipe_url && (
+        <p>
+          <a href={feature.recipe_url} target="_blank" rel="noopener noreferrer">
+            Recipe
+          </a>
+        </p>
+      )}
       <form action={formAction}>
         <input type="hidden" name="dinner_id" value={dinnerId} />
         <input type="hidden" name="feature_id" value={feature.id} />
@@ -53,6 +65,9 @@ export default function FeatureCard({ dinnerId, feature, holders, canClaim, canU
         <p className="error" role="alert">
           {state.error}
         </p>
+      )}
+      {canManage && feature.type !== "host" && (
+        <FeatureAdmin dinnerId={dinnerId} feature={feature} filled={filled} />
       )}
     </article>
   );

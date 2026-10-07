@@ -1,6 +1,6 @@
 # WinnerDinner 2000: Milestone plan
 
-Status: **APPROVED.** Milestones 0 and 1 are done and applied to the dev Supabase project.
+Status: **APPROVED.** Milestones 0, 1 and 2 are done and applied to the dev Supabase project.
 Source rules: `docs/scope.md`, `docs/constraints.md`, `docs/ambiguity.md`. If this plan and those files disagree, stop and ask.
 
 ## Working rules for every milestone
@@ -20,7 +20,7 @@ Source rules: `docs/scope.md`, `docs/constraints.md`, `docs/ambiguity.md`. If th
 | `dinners` | A request | `id`, `owner_id`, `invite_token` (random), `link_enabled`, `main_title`, `main_url`, `main_description`, `starts_at` (timestamptz), `short_description`, `invitation_summary`, `cost_split` |
 | `dinner_costs` | Total cost, only readable while split is on | `dinner_id`, `total_sek` |
 | `participants` | Guest status per dinner. Owner has an `accepted` row | `dinner_id`, `user_id`, `status` (invited, accepted, declined, kicked) |
-| `features` | A task category with slots | `id`, `dinner_id`, `type`, `label`, `slots`, `recipe_title`, `recipe_url`, `color` |
+| `features` | A task category with slots | `id`, `dinner_id`, `type`, `label`, `slots`, `recipe_title`, `recipe_url`. The colour comes from `type` in the UI (no column) |
 | `roles` | A claimed slot | `feature_id`, `dinner_id`, `user_id`, unique (`feature_id`, `user_id`) |
 | `notices` | Home-page messages, independent of the dinner | `id`, `user_id`, `text`, `created_at` |
 
