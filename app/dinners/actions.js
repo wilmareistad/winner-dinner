@@ -195,3 +195,19 @@ export async function readdGuest(_prevState, formData) {
   refresh();
   return error ? { error: dbErrorMessage(error), username } : { readded: username };
 }
+
+export async function setCostSplit(_prevState, formData) {
+  const dinnerId = field(formData, "dinner_id");
+  if (!isUuid(dinnerId)) return { error: GENERIC_ERROR };
+  const supabase = await sessionClient(`/dinners/${dinnerId}`);
+  const enabled = field(formData, "enabled") === "true";
+  const total = field(formData, "total_sek");
+
+  const { error } = await supabase.rpc("set_cost_split", {
+    p_dinner_id: dinnerId,
+    p_enabled: enabled,
+    p_total_sek: enabled ? Number.parseInt(total, 10) : null,
+  });
+  refresh();
+  return error ? { error: dbErrorMessage(error), total } : {};
+}

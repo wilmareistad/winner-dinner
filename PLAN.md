@@ -1,6 +1,6 @@
 # WinnerDinner 2000: Milestone plan
 
-Status: **APPROVED.** Milestones 0 to 3 are done and applied to the dev Supabase project.
+Status: **APPROVED.** Milestones 0 to 4 are done and applied to the dev Supabase project.
 Source rules: `docs/scope.md`, `docs/constraints.md`, `docs/ambiguity.md`. If this plan and those files disagree, stop and ask.
 
 ## Working rules for every milestone
