@@ -15,6 +15,7 @@ import AddFeatureForm from "./AddFeatureForm";
 import AnswerForm from "./AnswerForm";
 import EditDinnerForm from "./EditDinnerForm";
 import FeatureCard from "./FeatureCard";
+import GuestManager from "./GuestManager";
 import InviteLink from "./InviteLink";
 
 export const metadata = { title: "Dinner · WinnerDinner 2000" };
@@ -155,7 +156,9 @@ export default async function DinnerPage({ params }) {
         )}
       </section>
 
-      {(isOwner || me?.status === "accepted") && (
+      {isOwner && <GuestManager dinnerId={id} people={people} readOnly={readOnly} />}
+
+      {!isOwner && me?.status === "accepted" && (
         <section className="stack">
           <h2>Who is coming ({accepted.length})</h2>
           <ul className="people">

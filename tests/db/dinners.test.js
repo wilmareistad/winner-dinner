@@ -438,18 +438,12 @@ describe("claim_role and unclaim_role", () => {
       const owner2 = await createAuthUser(db, "owner_2");
       const otherDinner = await newDinner(db, owner2);
       const stranger = await createAuthUser(db, "stranger");
-      // Wrong dinner for the feature, and a holder who is not a participant.
-      for (const [dinnerId, userId] of [
-        [otherDinner, owner2],
-        [otherDinner, stranger],
-      ]) {
-        await expectSqlError(
-          db,
-          "insert into public.roles (feature_id, dinner_id, user_id) values ($1, $2, $3)",
-          [dessert, dinnerId, userId],
-          "23503"
-        );
-      }
+      const insert = "insert into public.roles (feature_id, dinner_id, user_id) values ($1, $2, $3)";
+      // Wrong dinner for the feature (foreign key).
+      await expectSqlError(db, insert, [dessert, otherDinner, owner2], "23503");
+      // A holder who is not a participant. The roles_require_accepted trigger
+      // (milestone 3) refuses it before the foreign key is checked.
+      await expectSqlError(db, insert, [dessert, otherDinner, stranger], ERR.notAccepted);
     }));
 });
 

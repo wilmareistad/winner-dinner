@@ -3,8 +3,16 @@ import { randomUUID } from "node:crypto";
 import { dbConfig } from "../../scripts/db-config.mjs";
 import { HIDDEN_EMAIL_DOMAIN } from "../../lib/auth.js";
 
+// Timeouts so a stalled pooler connection fails one test quickly instead of
+// hanging the whole run. Lock waits in the race tests are far shorter.
 export async function connect() {
-  const client = new pg.Client(dbConfig());
+  const client = new pg.Client({
+    ...dbConfig(),
+    connectionTimeoutMillis: 15_000,
+    query_timeout: 15_000,
+  });
+  // A dropped connection then fails the running query instead of crashing the worker.
+  client.on("error", () => {});
   await client.connect();
   return client;
 }
