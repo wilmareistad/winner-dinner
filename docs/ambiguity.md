@@ -1,10 +1,10 @@
 # WinnerDinner 2000: Ambiguity
 
-The unwritten rules. Every question has one of three tags:
+The unwritten rules. Every question has one of these tags:
 
 - **DECIDED**: answered, and the agent must follow it.
 - **OUT OF SCOPE (v1)**: the gap was seen and deliberately not filled. The agent must not build it or guess.
-- **PO WILL ANSWER**: still open. The agent must not guess. It lists the question in the plan and asks, or implements the stated *proposal* behind a clearly marked seam that is easy to change.
+- **PO WILL ANSWER**: still open. The agent must not guess. It lists the question in the plan and asks. No items are open at the moment.
 
 ---
 
@@ -18,6 +18,11 @@ The unwritten rules. Every question has one of three tags:
 | 4 | Account deletion | **DECIDED.** Requests created by a deleted user are deleted too. Guests are notified on their home page. |
 | 5 | Duplicate lines | **DECIDED.** "Guests cannot change the main recipe" stays in **Must** and is removed from **Won't**. The unfinished line "guests can only" is removed from Won't. |
 | 6 | Warning before the two-week deletion | **DECIDED.** No warning. It is 2 weeks after the dinner, so the invitation is no longer needed. |
+| 7 | Who counts toward the 30-guest limit | **DECIDED.** Only `accepted` guests. `invited` and `declined` do not count, so a shared link cannot fill the request. User 1 is not counted. |
+| 8 | Status of a re-added kicked guest | **DECIDED.** `invited`, with no roles. They must accept again. |
+| 9 | Who can change the main recipe | **DECIDED.** Only User 1. No guest, in any status, can change it. |
+| 10 | Password reset | **OUT OF SCOPE (v1).** There is no reset. A forgotten password means a lost account. A logged-in user can change their password. |
+| 11 | Live updates of slot state | **DECIDED.** No realtime in v1. The screen refreshes on actions and page load. |
 
 ---
 
@@ -41,8 +46,8 @@ The unwritten rules. Every question has one of three tags:
 - E6 (R4): The dinner was yesterday. Claim buttons are disabled, and a direct request is rejected.
 
 **Questions (red cards)**
-- Q-A1. Can a guest in `invited` status (not yet answered) see features, without being able to claim? **PDECIDED.** yes, read-only view.
-- Q-A2. Can one user hold two roles on the *same* feature (two slots of Dessert)? **DECIDED.** Proposal: no, one role per feature per user.
+- Q-A1. Can a guest in `invited` status (not yet answered) see features, without being able to claim? **DECIDED.** Yes, read-only view.
+- Q-A2. Can one user hold two roles on the *same* feature (two slots of Dessert)? **DECIDED.** No, one role per feature per user. Two different features (two Desserts) are two roles.
 - Q-A3. Is Main course a feature with slots (several people cook it)? **DECIDED.** yes, same mechanics as other features, with one main course per request.
 
 ### Story B: "User 1 can kick a guest"
@@ -75,7 +80,7 @@ The unwritten rules. Every question has one of three tags:
 - E2: A guest declines. The count drops to 3 and the amount becomes 200 for everyone.
 
 **Questions**
-- Q-C1. Currency and rounding (600 / 7)? **DECIDED.** a single currency label set once (SEK), rounded up to the next whole unit or to 2 decimals.
+- Q-C1. Currency and rounding (600 / 7)? **DECIDED.** a single currency (SEK), per-person amount rounded up to the next whole krona.
 - Q-C2. If User 1 is not attending, do they count? **DECIDED.** User 1 always counts, as the scope says.
 
 ---
@@ -99,10 +104,10 @@ The unwritten rules. Every question has one of three tags:
 | Dimension | Question | Tag |
 |---|---|---|
 | Money | (none) | n/a |
-| Actor | Who counts toward the 30 limit? | **DECIDED.** Proposal: all guests except kicked (so `invited`, `accepted`, `declined` count). |
+| Actor | Who counts toward the 30 limit? | **DECIDED.** Only `accepted` guests (see decision 7). |
 | Actor | Can a link be shared so strangers join? | **DECIDED.** Yes. Anyone with the link can join, unless blocked. The link can be disabled by User 1. |
 | Time | Link opened after the date or after deletion | **DECIDED.** Clear "link not valid" or read-only view. |
-| State | Declined user opens the link | **DECIDED.** Blocked from joining anew. They keep the existing guest row (see Q1). |
+| State | Declined user opens the link | **DECIDED.** No new row is created. They keep the existing guest row and land on the request page, where they can change their answer (see decision 1). |
 | State | Link is disabled, and existing guests? | **DECIDED.** existing guests keep access, only new joins are blocked. |
 
 ### Mechanic: cost split
@@ -113,7 +118,7 @@ The unwritten rules. Every question has one of three tags:
 | Money | Total changed after people saw an amount | **DECIDED.** The amount updates live. No history is kept. |
 | Actor | Who counts: accepted only, or also invited | **DECIDED.** Accepted attendees plus User 1. |
 | Time | Cost changed after the dinner date | **DECIDED.** Not allowed (read-only). |
-| State | Zero accepted attendees | **DECIDED.** User 1 still counts, so the divisor is at least 1. |
+| State | Zero accepted guests | **DECIDED.** Accepted guests = 0. User 1 still counts, so the divisor is at least 1. User 1 always sees the invited and accepted lists and counts. If cost split is off, nothing about cost is shown. |
 
 ### Mechanic: account deletion
 
@@ -134,5 +139,32 @@ The unwritten rules. Every question has one of three tags:
 | Time | A guest under 18 joins later via the link | **OUT OF SCOPE (v1).** Not checked. |
 | State | User 1 answers "No" | **DECIDED.** Feature is not added. |
 | State | Modal shown again if Alcohol is removed and re-added | **DECIDED.** Yes, every time it is added. |
+
+---
+
+## 4. Technical decisions
+
+All **DECIDED**. Chosen to fit the rules above. Change them here first if they turn out wrong.
+
+| Topic | Decision |
+|---|---|
+| Username login | Hidden email address derived from the lowercase username. There is no email verification at all: confirmation is disabled in Supabase, and no email is ever sent or shown to the user. |
+| Username rules | Case-insensitive unique (`citext`), 3 to 20 characters, letters, digits and underscore. Cannot be changed after sign-up. Reusable after the account is deleted. Duplicate gives "Username is not available". |
+| Password | Minimum 8 characters. No reset (decision 10). |
+| Identity | User id (uuid) everywhere. Never the username. |
+| Writes | Only through `SECURITY DEFINER` functions with fixed `search_path`. Every function that changes a request takes a row lock on the dinner first, which serializes claims, answers, kicks, feature changes, slot changes and deletes. |
+| Read-only and cascade | The read-only check does not block cascade deletes from account deletion or cleanup. |
+| Time | Dinner date and time stored as `timestamptz`, entered in Europe/Stockholm. Read-only starts at the dinner time. Cleanup deletes 2 weeks after it. The date cannot be set in the past. |
+| Cost | Total in a separate table. RLS returns it only while cost split is on. Turning split off removes the stored total. |
+| Feature model | Main course and Host are features with slots (Host: 1 slot, Main course: one per request). Appetizer, Dessert and Snack can be added several times. Other types once per request. Slots: 1 to 30 per feature. |
+| Entertainment | One feature with an optional label (board games, console games, karaoke, other). "Other" takes free text. |
+| Alcohol | The server function requires `age_confirmed = true` when adding Alcohol. |
+| User 1 as participant | Stored as an `accepted` participant row. Not counted in the 30 guests, counted in the cost split and in "who is coming". |
+| Re-add search | Username search only among the kicked guests of that request. No global user search. |
+| Profile visibility | Other guests see username and emoji. The name is visible to User 1 and to the user themselves only. |
+| Invite link | Random token with high entropy, separate from the request id. The landing page for anonymous visitors shows only "You have been invited" and the login/sign-up form. After login the user returns by a relative path only. |
+| Notices | Keyed by user id, with a text copy of the message. Created for: feature removed, request deleted by its creator, request deleted because the creator deleted their account. Removed when dismissed or after 14 days. |
+| Accessibility | Feature colours must not be the only signal (also use a label or icon), and text must keep sufficient contrast on off-white. |
+| Tests | Vitest for everything. SQL/RLS tests use `pg` inside rolled-back transactions. Concurrency tests use several parallel database connections. |
 
 ---

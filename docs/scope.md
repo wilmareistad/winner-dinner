@@ -1,7 +1,7 @@
 # WinnerDinner 2000: Scope
 
 Source of truth for what to build and what NOT to build.
-Companion files: `CONSTRAINTS.md` (the "rooms" of the app) and `AMBIGUITY.md` (unwritten rules, open questions).
+Companion files: `constraints.md` (the "rooms" of the app) and `ambiguity.md` (unwritten rules, decisions).
 If code and these files disagree, stop and ask. Update the files when decisions change.
 
 ## Project concept
@@ -32,6 +32,7 @@ A social dinner app that spreads the work of a dinner between friends. User 1 cr
 - Language: JavaScript (Next.js)
 - Database and authentication: Supabase
 - Hosting: Vercel
+- Language of the website: English.
 
 ## Design
 
@@ -46,7 +47,7 @@ Minimalist. Main colours are off-white with soft pastel violet and blue accents.
 - Users can delete their own account.
 - User 1 can create a dinner request with a date, a time, and one main course or recipe.
 - User 1 can invite guests through a unique link.
-- A request has a maximum of 30 guests.
+- A request has a maximum of 30 accepted guests (User 1 not included). Only `accepted` guests count.
 - Guests can answer whether they can come or not.
 - There is a list of who is coming (accepted guests), showing username and emoji.
 - User 1 can add and remove features on the request.
@@ -58,9 +59,9 @@ Minimalist. Main colours are off-white with soft pastel violet and blue accents.
 - Guests can see the date of the dinner.
 - There is an admin page for User 1 and a separate guest page for every request.
 - Only User 1 can delete a request they created.
-- Guests cannot change the main recipe.
+- Guests (in any status, including `invited`) cannot change the main recipe.
 - If cost split is off, no cost or amount is shown anywhere.
-- Users see in-app notices on their home page when something affects them: a feature they held was removed, or a request they were on was deleted because its creator deleted their account. *(Added: required by the constraints, see Out of scope for what this is not.)*
+- Users see in-app notices on their home page when something affects them: a feature they held was removed, or a request they were on was deleted (by its creator, or because the creator deleted their account). *(Added: required by the constraints, see Out of scope for what this is not.)*
 
 ### Should
 
@@ -85,13 +86,12 @@ Minimalist. Main colours are off-white with soft pastel violet and blue accents.
 - Push notifications, email or SMS notifications, and native mobile apps
 - Recurring dinners
 - Multiple languages (English only)
-- Guests changing the main recipe
 - Guest-requested features and chat (see Could)
 - Warning guests before a request is deleted 2 weeks after the dinner
-- Password reset by email (see `AMBIGUITY.md`, open question)
+- Password reset by email (a forgotten password means a lost account)
 - Age verification of guests
 
-## Features that must exist
+## Available feature types
 
 - Appetizers (several allowed, optional recipe)
 - Main course (only one per request)
@@ -102,7 +102,9 @@ Minimalist. Main colours are off-white with soft pastel violet and blue accents.
 - Grocery shopping (buyer)
 - Cleanup
 - Entertainment (a subcategory with options like board games, console games, karaoke and other)
-- **Host** is a fixed role. User 1 has it by default and can unselect it to take other roles instead.
+- **Host** is a fixed role with one slot. User 1 has it by default and can unselect it to take other roles instead.
+
+Only Appetizer, Dessert and Snack can be added several times. All other types (including Entertainment, Alcohol, Soft drinks, Grocery shopping and Cleanup) can be added once per request. Details in `ambiguity.md`, section 4.
 
 ### Alcohol age check
 
@@ -162,5 +164,6 @@ Everything else (extra features, cost split, kick, re-add, cleanup, design pass)
 
 - Only `accepted` guests can claim roles (follows from the guest flow).
 - Only `accepted` guests appear in the "who is coming" list shown to guests.
-- A `declined` guest keeps access to the request page so they can change their answer back. *(This reconciles "declined are not deleted" with "blocked from the link until re-added". See `AMBIGUITY.md`, Q1.)*
+- A `declined` guest keeps access to the request page so they can change their answer back. *(This reconciles "declined are not deleted" with "blocked from the link until re-added". See `ambiguity.md`, decision 1.)*
 - "Host" is one person per request.
+- User 1 is stored as an `accepted` participant on their own request. They are not a "guest" for the 30-guest limit, but they appear in "who is coming" and count in the cost split.
