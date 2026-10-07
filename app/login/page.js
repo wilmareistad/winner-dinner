@@ -14,7 +14,7 @@ export default async function LoginPage({ searchParams }) {
 
   return (
     <main className="page narrow">
-      <h1>WinnerDinner 2000</h1>
+      <h1>Welcome</h1>
       <p className="muted">Share the work of a dinner between friends.</p>
       {params.deleted === "1" && (
         <p className="notice" role="status">

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import "./globals.css";
 
 export const metadata = {
@@ -8,12 +9,20 @@ export const metadata = {
 export const viewport = {
   width: "device-width",
   initialScale: 1,
+  themeColor: "#faf8f5",
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <header className="site-header">
+          <Link href="/" className="brand">
+            <span aria-hidden="true">🍽️</span> WinnerDinner 2000
+          </Link>
+        </header>
+        {children}
+      </body>
     </html>
   );
 }

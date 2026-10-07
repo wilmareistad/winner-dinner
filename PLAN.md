@@ -1,6 +1,6 @@
 # WinnerDinner 2000: Milestone plan
 
-Status: **APPROVED.** Milestones 0 to 6 are done and applied to the dev Supabase project.
+Status: **APPROVED.** All milestones (0 to 7) are done and applied to the dev Supabase project. Testing on a real phone is still open (see M7).
 Source rules: `docs/scope.md`, `docs/constraints.md`, `docs/ambiguity.md`. If this plan and those files disagree, stop and ask.
 
 ## Working rules for every milestone

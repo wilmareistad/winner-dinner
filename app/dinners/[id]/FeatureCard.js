@@ -20,7 +20,7 @@ export default function FeatureCard({ dinnerId, feature, holders, canClaim, canU
         <h3>
           <span aria-hidden="true">{FEATURE_ICONS[feature.type]}</span> {name}
         </h3>
-        <span className="badge">
+        <span className={full ? "badge full" : "badge"}>
           {full ? "Full" : "Open"} · {filled} of {feature.slots} filled
         </span>
       </div>
