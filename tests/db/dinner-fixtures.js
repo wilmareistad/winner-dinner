@@ -13,8 +13,11 @@ export const ERR = {
   linkNotValid: "WD410",
   blocked: "WD411",
   notAccepted: "WD412",
+  ageNotConfirmed: "WD421",
   invalid: "WD422",
   readOnly: "WD423",
+  belowFilled: "WD424",
+  confirmNeeded: "WD428",
   roleLimit: "WD429",
 };
 

@@ -250,12 +250,12 @@ describe("add_feature", () => {
       expect(await addFeature(db, owner, dinnerId, "dessert", 30)).toBeTruthy();
     }));
 
-  it("Host cannot be added again, Alcohol is refused until the age check exists", () =>
+  it("Host cannot be added again, Alcohol needs the age confirmation, unknown types fail", () =>
     withRollback(async (db) => {
       const owner = await createAuthUser(db, "owner_1");
       const dinnerId = await newDinner(db, owner);
       await rpcErrorAs(db, owner, "add_feature", [dinnerId, "host", 1], ERR.invalid);
-      await rpcErrorAs(db, owner, "add_feature", [dinnerId, "alcohol", 2], ERR.invalid);
+      await rpcErrorAs(db, owner, "add_feature", [dinnerId, "alcohol", 2], ERR.ageNotConfirmed);
       await rpcErrorAs(db, owner, "add_feature", [dinnerId, "pizza", 2], ERR.invalid);
     }));
 

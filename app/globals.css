@@ -211,3 +211,59 @@ a.button.primary {
   color: var(--text);
   text-decoration: none;
 }
+
+.pre-line {
+  white-space: pre-line;
+}
+
+/* Feature categories, colour-coded within the palette. Always paired with an
+   icon and the name, so colour is never the only signal. */
+.feature {
+  border-left: 6px solid var(--feature-color, var(--border));
+}
+
+.feature--host { --feature-color: #8a7cd1; }
+.feature--main_course { --feature-color: #6f9bd8; }
+.feature--appetizer { --feature-color: #9fc9a8; }
+.feature--dessert { --feature-color: #e3a8c7; }
+.feature--snack { --feature-color: #e8c78f; }
+.feature--alcohol { --feature-color: #b88ad1; }
+.feature--soft_drinks { --feature-color: #8fcfd8; }
+.feature--grocery_shopping { --feature-color: #a9b8e8; }
+.feature--cleanup { --feature-color: #b5c4cf; }
+.feature--entertainment { --feature-color: #d8a0e0; }
+
+.feature-admin {
+  border-top: 1px solid var(--border);
+  padding-top: 0.75rem;
+}
+
+.confirm {
+  background: var(--violet-soft);
+  border-radius: 8px;
+  padding: 0.75rem;
+}
+
+button.danger {
+  background: var(--error);
+  border-color: var(--error);
+  color: #fff;
+}
+
+details > summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.edit-form {
+  margin-top: 1rem;
+}
+
+dialog {
+  margin: auto;
+  max-width: 22rem;
+}
+
+dialog::backdrop {
+  background: rgb(42 39 51 / 0.4);
+}

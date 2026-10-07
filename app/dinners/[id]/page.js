@@ -2,9 +2,18 @@ import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { createClient, getCurrentUserId } from "@/lib/supabase/server";
-import { MAX_ROLES, formatDinnerTime, isReadOnly, isUuid, personLabel } from "@/lib/dinners";
+import {
+  MAX_ROLES,
+  formatDinnerTime,
+  isReadOnly,
+  isUuid,
+  personLabel,
+  stockholmDateTime,
+  todayInStockholm,
+} from "@/lib/dinners";
 import AddFeatureForm from "./AddFeatureForm";
 import AnswerForm from "./AnswerForm";
+import EditDinnerForm from "./EditDinnerForm";
 import FeatureCard from "./FeatureCard";
 import InviteLink from "./InviteLink";
 
@@ -30,12 +39,14 @@ export default async function DinnerPage({ params }) {
   const [dinnerResult, featuresResult, rolesResult, peopleResult] = await Promise.all([
     supabase
       .from("dinners")
-      .select("id, owner_id, invite_token, main_title, main_url, main_description, starts_at, short_description")
+      .select(
+        "id, owner_id, invite_token, link_enabled, main_title, main_url, main_description, starts_at, short_description, invitation_summary"
+      )
       .eq("id", id)
       .maybeSingle(),
     supabase
       .from("features")
-      .select("id, type, slots, created_at")
+      .select("id, type, slots, label, recipe_title, recipe_url, created_at")
       .eq("dinner_id", id)
       .order("created_at"),
     supabase.from("roles").select("feature_id, user_id, created_at").eq("dinner_id", id).order("created_at"),
@@ -84,7 +95,27 @@ export default async function DinnerPage({ params }) {
         </p>
       )}
 
-      {isOwner && !readOnly && <InviteLink url={await inviteUrl(dinner.invite_token)} />}
+      {dinner.invitation_summary && (
+        <section className="card stack">
+          <h2>Invitation</h2>
+          <p className="pre-line">{dinner.invitation_summary}</p>
+        </section>
+      )}
+
+      {isOwner && !readOnly && (
+        <>
+          <InviteLink
+            dinnerId={id}
+            url={await inviteUrl(dinner.invite_token)}
+            enabled={dinner.link_enabled}
+          />
+          <EditDinnerForm
+            dinnerId={id}
+            minDate={todayInStockholm()}
+            values={{ ...dinner, ...stockholmDateTime(dinner.starts_at) }}
+          />
+        </>
+      )}
 
       {!isOwner && me && <AnswerForm dinnerId={id} status={me.status} readOnly={readOnly} />}
 
@@ -115,10 +146,13 @@ export default async function DinnerPage({ params }) {
               holders={holders}
               canClaim={canClaim && !mine}
               canUnclaim={!readOnly && mine}
+              canManage={isOwner && !readOnly}
             />
           );
         })}
-        {isOwner && !readOnly && <AddFeatureForm dinnerId={id} />}
+        {isOwner && !readOnly && (
+          <AddFeatureForm dinnerId={id} existingTypes={featuresResult.data.map((f) => f.type)} />
+        )}
       </section>
 
       {(isOwner || me?.status === "accepted") && (
