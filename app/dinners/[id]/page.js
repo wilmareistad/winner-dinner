@@ -13,6 +13,7 @@ import {
 } from "@/lib/dinners";
 import AddFeatureForm from "./AddFeatureForm";
 import AnswerForm from "./AnswerForm";
+import CostSplit, { CostLine } from "./CostSplit";
 import EditDinnerForm from "./EditDinnerForm";
 import FeatureCard from "./FeatureCard";
 import GuestManager from "./GuestManager";
@@ -37,7 +38,7 @@ export default async function DinnerPage({ params }) {
   const userId = await getCurrentUserId(supabase);
   if (!userId) redirect(`/login?next=${encodeURIComponent(`/dinners/${id}`)}`);
 
-  const [dinnerResult, featuresResult, rolesResult, peopleResult] = await Promise.all([
+  const [dinnerResult, featuresResult, rolesResult, peopleResult, costResult] = await Promise.all([
     supabase
       .from("dinners")
       .select(
@@ -52,8 +53,10 @@ export default async function DinnerPage({ params }) {
       .order("created_at"),
     supabase.from("roles").select("feature_id, user_id, created_at").eq("dinner_id", id).order("created_at"),
     supabase.rpc("dinner_people", { p_dinner_id: id }),
+    // No row while cost split is off, so no amount can be shown.
+    supabase.rpc("dinner_cost", { p_dinner_id: id }),
   ]);
-  for (const result of [dinnerResult, featuresResult, rolesResult, peopleResult]) {
+  for (const result of [dinnerResult, featuresResult, rolesResult, peopleResult, costResult]) {
     if (result.error) throw new Error("Could not load the request.");
   }
 
@@ -61,6 +64,7 @@ export default async function DinnerPage({ params }) {
   if (!dinner) notFound();
 
   const people = peopleResult.data;
+  const cost = costResult.data[0] ?? null;
   const peopleById = new Map(people.map((p) => [p.user_id, p]));
   const me = peopleById.get(userId);
   const isOwner = dinner.owner_id === userId;
@@ -100,6 +104,14 @@ export default async function DinnerPage({ params }) {
         <section className="card stack">
           <h2>Invitation</h2>
           <p className="pre-line">{dinner.invitation_summary}</p>
+        </section>
+      )}
+
+      {isOwner && !readOnly && <CostSplit dinnerId={id} cost={cost} />}
+      {cost && (!isOwner || readOnly) && (
+        <section className="card stack">
+          <h2>Cost</h2>
+          <CostLine cost={cost} />
         </section>
       )}
 
